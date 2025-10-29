@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sustainability Product Classifier</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .sdg-badge {
+            display: inline-block;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-top: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .input-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            resize: vertical;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-container {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d) !important;
+        }
+
+        .result-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transform: scale(0.95);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .result-card.show {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .prediction-label {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .kemasan-boros {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+
+        .produk-tidak-tahan-lama {
+            background: linear-gradient(135deg, #ffa726, #fb8c00);
+            color: white;
+        }
+
+        .produk-awet-berkualitas {
+            background: linear-gradient(135deg, #66bb6a, #43a047);
+            color: white;
+        }
+
+        .netral {
+            background: linear-gradient(135deg, #78909c, #607d8b);
+            color: white;
+        }
+
+        .confidence-bar {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 20px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            border-radius: 10px;
+            transition: width 1s ease-in-out;
+            position: relative;
+        }
+
+        .confidence-text {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .stats-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .examples-section {
+            margin-top: 30px;
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .example-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .example-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .example-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .example-category {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .example-text {
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌱 Sustainability Product Classifier</h1>
+            <p>Klasifikasi Review Produk Berdasarkan Aspek Keberlanjutan</p>
+            <div class="sdg-badge">📊 SDG 12: Responsible Consumption and Production</div>
+        </div>
+
+        <div class="main-content">
+            <div class="input-section">
+                <h3>💬 Input Review Produk</h3>
+                <textarea id="reviewInput" placeholder="Masukkan review produk di sini...&#10;&#10;Contoh: &#10;- 'Barang bagus, tahan lama dan berkualitas tinggi. Recommended!'&#10;- 'Kemasan terlalu banyak plastik, boros banget packaging nya'&#10;- 'Produk cepat rusak, tidak awet, mengecewakan'"></textarea>
+                <div class="btn-container">
+                    <button onclick="classifyReview()">🔍 Klasifikasi</button>
+                    <button class="btn-secondary" onclick="clearAll()">🗑️ Bersihkan</button>
+                </div>
+            </div>
+
+            <div class="result-section">
+                <h3>📊 Hasil Klasifikasi</h3>
+                <div id="loadingDiv" class="loading">
+                    <div class="spinner"></div>
+                    <p>Menganalisis review...</p>
+                </div>
+                <div id="resultContainer">
+                    <p style="color: #999; text-align: center; padding: 40px;">Masukkan review dan klik 'Klasifikasi' untuk melihat hasil</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-section">
+            <h3>📈 Statistik Model</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">97.33%</div>
+                    <div class="stat-label">Akurasi Model (Linear SVC)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">97.46%</div>
+                    <div class="stat-label">F1-Score (Macro)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">5,400</div>
+                    <div class="stat-label">Dataset Size</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">4</div>
+                    <div class="stat-label">Kategori Klasifikasi</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="examples-section">
+            <h3>💡 Contoh Review untuk Setiap Kategori</h3>
+            <div class="example-grid">
+                <div class="example-card" onclick="useExample(this)">
+                    <div class="example-category">🟢 Produk Awet & Berkualitas</div>
+                    <div class="example-text">"Barang mantap banget! Sudah 2 tahun pakai masih awet, kualitas terjamin. Rekomendasi seller!"</div>
+                </div>
+                <div class="example-card" onclick="useExample(this)">
+                    <div class="example-category">🔴 Kemasan Boros</div>
+                    <div class="example-text">"Barangnya sih bagus, tapi kemasannya pakai bubble wrap berlapis-lapis, plastiknya banyak banget, boros packaging"</div>
+                </div>
+                <div class="example-card" onclick="useExample(this)">
+                    <div class="example-category">🟠 Produk Tidak Tahan Lama</div>
+                    <div class="example-text">"Kecewa banget! Baru seminggu udah rusak, kualitas jelek, bahan mudah patah. Tidak recommended!"</div>
+                </div>
+                <div class="example-card" onclick="useExample(this)">
+                    <div class="example-category">⚪ Netral</div>
+                    <div class="example-text">"Pengiriman cepat, sesuai deskripsi. Terima kasih seller, pelayanan ramah dan responsif."</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = 'http://localhost:5000';
+        
+        // API Service
+        const ApiService = {
+            async predict(reviewText) {
+                const response = await fetch(`${API_BASE_URL}/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ review: reviewText })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Network error occurred');
+                }
+                
+                return await response.json();
+            },
+
+            async healthCheck() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/health`);
+                    return response.ok;
+                } catch (error) {
+                    return false;
+                }
+            }
+        };
+
+        // Check API connection on page load
+        window.addEventListener('load', async () => {
+            const isHealthy = await ApiService.healthCheck();
+            if (!isHealthy) {
+                showConnectionError();
+            }
+        });
+
+        function showConnectionError() {
+            const errorHTML = `
+                <div style="background: #ffebee; border: 1px solid #f44336; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+                    <h4 style="color: #c62828; margin-bottom: 10px;">⚠️ Backend Connection Error</h4>
+                    <p style="color: #666; margin-bottom: 15px;">
+                        Cannot connect to Flask backend. Please ensure:
+                    </p>
+                    <ul style="color: #666; text-align: left; max-width: 400px; margin: 0 auto;">
+                        <li>Flask server is running on localhost:5000</li>
+                        <li>Model files (.pkl) are in the correct directory</li>
+                        <li>All required dependencies are installed</li>
+                    </ul>
+                    <p style="color: #666; margin-top: 15px; font-size: 0.9rem;">
+                        Run: <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 4px;">python app.py</code>
+                    </p>
+                </div>
+            `;
+            document.getElementById('resultContainer').innerHTML = errorHTML;
+        }
+
+        async function classifyReview() {
+            const reviewText = document.getElementById('reviewInput').value.trim();
+            
+            if (!reviewText) {
+                alert('Mohon masukkan review terlebih dahulu!');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loadingDiv').style.display = 'block';
+            document.getElementById('resultContainer').innerHTML = '';
+
+            try {
+                // Call Flask API
+                const result = await ApiService.predict(reviewText);
+                displayResult(result, reviewText);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                displayError(error.message);
+            } finally {
+                document.getElementById('loadingDiv').style.display = 'none';
+            }
+        }
+
+        function displayError(errorMessage) {
+            const errorHTML = `
+                <div class="result-card show" style="border-left: 4px solid #f44336;">
+                    <div style="color: #c62828; font-weight: bold; margin-bottom: 10px;">
+                        ❌ Error
+                    </div>
+                    <p style="color: #666;">
+                        ${errorMessage}
+                    </p>
+                    <div style="margin-top: 15px; padding: 10px; background: #ffebee; border-radius: 6px;">
+                        <small style="color: #666;">
+                            Pastikan Flask server berjalan dan model files tersedia
+                        </small>
+                    </div>
+                </div>
+            `;
+            document.getElementById('resultContainer').innerHTML = errorHTML;
+        }
+
+        function displayResult(result, originalText) {
+            const categoryNames = {
+                'kemasan_boros': 'Kemasan Boros',
+                'produk_tidak_tahan_lama': 'Produk Tidak Tahan Lama',
+                'produk_awet_berkualitas': 'Produk Awet & Berkualitas',
+                'netral': 'Netral'
+            };
+
+            const categoryDescriptions = {
+                'kemasan_boros': 'Review menunjukkan kekhawatiran tentang kemasan yang berlebihan atau tidak ramah lingkungan',
+                'produk_tidak_tahan_lama': 'Review menunjukkan produk memiliki kualitas rendah atau tidak awet',
+                'produk_awet_berkualitas': 'Review menunjukkan produk berkualitas tinggi dan tahan lama',
+                'netral': 'Review tidak menunjukkan indikasi khusus terkait aspek sustainability'
+            };
+
+            const categoryIcons = {
+                'kemasan_boros': '📦',
+                'produk_tidak_tahan_lama': '💔',
+                'produk_awet_berkualitas': '✅',
+                'netral': '⚪'
+            };
+
+            // Use prediction from API result
+            const prediction = result.prediction || 'netral';
+            const predictionLabel = result.prediction_label || categoryNames[prediction];
+            const confidence = result.confidence || 0.5;
+            const confidencePercentage = (confidence * 100).toFixed(1);
+
+            // Create probabilities display if available
+            let probabilitiesHTML = '';
+            if (result.all_probabilities) {
+                probabilitiesHTML = '<div style="margin-top: 15px;"><h5 style="color: #333; margin-bottom: 10px;">Probabilitas Semua Kategori:</h5>';
+                for (const [category, prob] of Object.entries(result.all_probabilities)) {
+                    const categoryName = categoryNames[category] || category;
+                    const probPercentage = (prob * 100).toFixed(1);
+                    probabilitiesHTML += `
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
+                            <span style="color: #666; font-size: 0.9rem;">${categoryIcons[category]} ${categoryName}</span>
+                            <div style="display: flex; align-items: center; width: 60%;">
+                                <div style="background: #e0e0e0; border-radius: 10px; height: 8px; flex: 1; margin-right: 10px; overflow: hidden;">
+                                    <div style="background: linear-gradient(90deg, #4CAF50, #45a049); height: 100%; width: ${probPercentage}%; border-radius: 10px; transition: width 0.5s ease;"></div>
+                                </div>
+                                <span style="font-size: 0.8rem; color: #666; min-width: 40px;">${probPercentage}%</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                probabilitiesHTML += '</div>';
+            }
+
+            // Show processed text if available
+            let processedTextHTML = '';
+            if (result.processed_text && result.processed_text !== originalText.toLowerCase()) {
+                processedTextHTML = `
+                    <div style="margin-top: 15px; padding: 10px; background: #f0f8ff; border-radius: 6px; border-left: 3px solid #2196F3;">
+                        <small style="color: #1976D2; font-weight: bold;">Teks Setelah Preprocessing:</small>
+                        <div style="color: #666; font-size: 0.9rem; margin-top: 5px; font-style: italic;">
+                            "${result.processed_text}"
+                        </div>
+                    </div>
+                `;
+            }
+
+            const resultHTML = `
+                <div class="result-card show">
+                    <div class="prediction-label ${prediction}">
+                        ${categoryIcons[prediction]} ${predictionLabel}
+                    </div>
+                    <p style="color: #666; margin-bottom: 15px; font-style: italic;">
+                        "${originalText.length > 100 ? originalText.substring(0, 100) + '...' : originalText}"
+                    </p>
+                    <p style="color: #555; margin-bottom: 15px;">
+                        ${categoryDescriptions[prediction]}
+                    </p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-weight: bold; color: #333;">Confidence Score</span>
+                        <span style="font-weight: bold; color: #667eea;">${confidencePercentage}%</span>
+                    </div>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: ${confidencePercentage}%">
+                            <div class="confidence-text">${confidencePercentage}%</div>
+                        </div>
+                    </div>
+                    ${probabilitiesHTML}
+                    ${processedTextHTML}
+                    <div style="margin-top: 15px; padding: 8px; background: #f8f9fa; border-radius: 6px; font-size: 0.8rem; color: #666;">
+                        ✅ Hasil dari Model Python | Timestamp: ${result.timestamp ? new Date(result.timestamp).toLocaleString('id-ID') : new Date().toLocaleString('id-ID')}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('resultContainer').innerHTML = resultHTML;
+        }
+
+        function clearAll() {
+            document.getElementById('reviewInput').value = '';
+            document.getElementById('resultContainer').innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">Masukkan review dan klik \'Klasifikasi\' untuk melihat hasil</p>';
+        }
+
+        function useExample(element) {
+            const exampleText = element.querySelector('.example-text').textContent.replace(/"/g, '');
+            document.getElementById('reviewInput').value = exampleText;
+            document.getElementById('reviewInput').focus();
+        }
+
+        // Add enter key support
+        document.getElementById('reviewInput').addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.key === 'Enter') {
+                classifyReview();
+            }
+        });
+    </script>
+</body>
+</html>
