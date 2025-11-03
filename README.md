@@ -327,7 +327,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ## 👥 Author
 
 **Alisha Monifa**
-- GitHub: [@yourusername](https://github.com/monmon831)
+- GitHub: [@author](https://github.com/monmon831)
 - Email: alishamonifa3@gmail.com
 
 ## 🙏 Acknowledgments
